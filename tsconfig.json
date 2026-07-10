@@ -10,7 +10,7 @@
     // See also https://aka.ms/tsconfig/module
     "module": "commonjs",
     "target": "ES2021",
-    "types": [],
+    "types": ["node", "vscode"],
     // For nodejs:
     "lib": ["ES2021"],
     // "types": ["node"],
