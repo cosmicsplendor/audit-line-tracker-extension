@@ -1,0 +1,33 @@
+{
+  "name": "audit-line-tracker",
+  "displayName": "Audit Line Tracker",
+  "version": "0.0.1",
+  "publisher": "local",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onCommand:audit-tracker.toggleLine"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "audit-tracker.toggleLine",
+        "title": "Audit: Toggle Line Status"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "audit-tracker.toggleLine",
+        "key": "ctrl+shift+1",
+        "mac": "cmd+shift+1",
+        "when": "editorTextFocus"
+      }
+    ]
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.0.0"
+  }
+}
