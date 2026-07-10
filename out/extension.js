@@ -4,17 +4,23 @@ exports.activate = activate;
 exports.deactivate = deactivate;
 const vscode = require("vscode");
 function activate(context) {
-    // 1. Persistent state cache mapping file URIs to an array of marked line numbers
-    const storage = context.workspaceState.get('auditProgressCache') || {};
-    // 2. Highlighting layer: Dim subtle green background on marked code lines
+    // Upgraded to globalState for hard disk persistence across sessions/workspaces
+    const storage = context.globalState.get('auditProgressCache') || {};
     const readDecorationType = vscode.window.createTextEditorDecorationType({
-        backgroundColor: 'rgba(74, 222, 128, 0.06)',
-        isWholeLine: true
+        backgroundColor: 'rgba(16, 185, 129, 0.25)',
+        isWholeLine: true,
+        overviewRulerColor: 'rgba(16, 185, 129, 0.8)',
+        overviewRulerLane: vscode.OverviewRulerLane.Left,
+        gutterIconSize: 'contain',
+        dark: {
+            gutterIconPath: vscode.Uri.parse(`data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><rect width="4" height="16" fill="%2310b981"/></svg>`)
+        },
+        light: {
+            gutterIconPath: vscode.Uri.parse(`data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><rect width="4" height="16" fill="%23059669"/></svg>`)
+        }
     });
-    // 3. UI Status Readout (Sits in bottom-right toolbar area)
-    const statusBarTally = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+    const statusBarTally = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 10000);
     context.subscriptions.push(statusBarTally);
-    // Recalculate percentage metric for active document view
     function updateProgress(editor) {
         if (!editor) {
             statusBarTally.hide();
@@ -26,18 +32,15 @@ function activate(context) {
         if (totalLines === 0)
             return;
         const percentage = Math.round((markedLines.length / totalLines) * 100);
-        // Render percentage with clear, compact visual markup inside toolbar
-        statusBarTally.text = `$(check) Audit: ${percentage}% (${markedLines.length}/${totalLines} lines)`;
-        statusBarTally.tooltip = `File tracking profile for: ${editor.document.fileName}`;
+        statusBarTally.text = `$(checklist) Audit: ${percentage}% (${markedLines.length}/${totalLines} lines marked)`;
+        statusBarTally.tooltip = `Audit Progress Matrix for current file scope`;
         statusBarTally.show();
-        // Sync and draw visual highlights on screen
         const ranges = markedLines
-            .filter(line => line < totalLines) // Prevent crash arrays if file shrinks
+            .filter(line => line < totalLines)
             .map(line => new vscode.Range(line, 0, line, 0));
         editor.setDecorations(readDecorationType, ranges);
     }
-    // 4. Command Execution: Adds or removes current line under cursor
-    let toggleCommand = vscode.commands.registerCommand('audit-tracker.toggleLine', () => {
+    let toggleCommand = vscode.commands.registerCommand('audit-tracker.toggleLine', async () => {
         const editor = vscode.window.activeTextEditor;
         if (!editor)
             return;
@@ -48,23 +51,21 @@ function activate(context) {
         }
         const index = storage[uri].indexOf(currentLine);
         if (index > -1) {
-            storage[uri].splice(index, 1); // If already marked, unmark it
+            storage[uri].splice(index, 1);
         }
         else {
-            storage[uri].push(currentLine); // Else, commit line index
+            storage[uri].push(currentLine);
         }
-        // Commit updates to local persistent database layer
-        context.workspaceState.update('auditProgressCache', storage);
+        // Force a persistent block write to globalState cache and wait for confirmation
+        await context.globalState.update('auditProgressCache', storage);
         updateProgress(editor);
     });
-    // 5. Automated View Event Listeners
     context.subscriptions.push(toggleCommand, vscode.window.onDidChangeActiveTextEditor(editor => updateProgress(editor)), vscode.workspace.onDidChangeTextDocument(event => {
         const editor = vscode.window.activeTextEditor;
         if (editor && event.document === editor.document) {
             updateProgress(editor);
         }
     }));
-    // Initial pass-through runtime validation on setup startup
     updateProgress(vscode.window.activeTextEditor);
 }
 function deactivate() { }

@@ -1,7 +1,7 @@
 {
   "name": "audit-line-tracker",
   "displayName": "Audit Line Tracker",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "local",
   "engines": {
     "vscode": "^1.85.0"
@@ -20,8 +20,8 @@
     "keybindings": [
       {
         "command": "audit-tracker.toggleLine",
-        "key": "ctrl+shift+1",
-        "mac": "cmd+shift+1",
+        "key": "ctrl+d",
+        "mac": "cmd+d",
         "when": "editorTextFocus"
       }
     ]
